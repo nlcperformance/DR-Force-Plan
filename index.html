@@ -6,44 +6,77 @@ import {
   Utensils, 
   Activity, 
   CheckCircle, 
-  Clock, 
   Battery, 
   Zap, 
   Shield, 
   Trophy,
-  ChevronRight,
   Flame,
   Droplet,
-  AlertTriangle,
-  ToggleRight,
   RotateCcw
 } from 'lucide-react';
 
-const App = () => {
-  const [activeTab, setActiveTab] = useState('schedule');
-  const [selectedDay, setSelectedDay] = useState('Wednesday');
-  const [streak, setStreak] = useState(0); // Reset to 0 as requested
-  const [isGameTomorrow, setIsGameTomorrow] = useState(false);
-  const [completedToday, setCompletedToday] = useState(false);
+// --- Types & Interfaces ---
+
+interface Exercise {
+  name: string;
+  sets: string;
+  reps: string;
+  rpe: string;
+  note: string;
+}
+
+interface DayData {
+  type: 'rugby_gym' | 'rugby' | 'gym' | 'rest';
+  title: string;
+  focus: string;
+  details?: string; // Optional because gym days have 'workout' instead
+  icon: React.ReactNode;
+  workout?: Exercise[];
+}
+
+interface Schedule {
+  [key: string]: DayData;
+}
+
+interface RitualStep {
+  task: string;
+  time: string;
+  icon: React.ReactNode;
+}
+
+interface NutritionTip {
+  title: string;
+  desc: string;
+  target: string;
+  alert?: boolean;
+}
+
+// --- Main Component ---
+
+export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState<'schedule' | 'recovery'>('schedule');
+  const [selectedDay, setSelectedDay] = useState<string>('Wednesday');
+  const [streak, setStreak] = useState<number>(0);
+  const [isGameTomorrow, setIsGameTomorrow] = useState<boolean>(false);
+  const [completedToday, setCompletedToday] = useState<boolean>(false);
 
   const handleComplete = () => {
     if (!completedToday) {
-      setStreak(s => s + 1);
+      setStreak((s) => s + 1);
       setCompletedToday(true);
     }
   };
 
   const handleMissed = () => {
-    if (confirm("Reset streak? (Use this if you missed a scheduled session)")) {
+    if (window.confirm("Reset streak? (Use this if you missed a scheduled session)")) {
       setStreak(0);
       setCompletedToday(false);
     }
   };
 
-  // --- DATA & CONTENT ---
+  // --- Data Configuration ---
 
-  // Standard Week Schedule
-  const schedule = {
+  const schedule: Schedule = {
     Monday: {
       type: 'rugby_gym',
       title: 'Quins Day',
@@ -63,7 +96,6 @@ const App = () => {
       title: 'Structural Integrity & Force',
       focus: 'Absolute Strength & Ankle Stiffness',
       icon: <Zap className="w-5 h-5 text-yellow-400" />,
-      // Garage Strength Style: Technical Coordination + Absolute Strength
       workout: [
         { name: "Barefoot Pogo Jumps", sets: "3", reps: "10 sec", rpe: "RPE 6", note: "Stiffness. Bouncy & elastic. Don't let heels touch." },
         { name: "Heavy KB Swings", sets: "5", reps: "5", rpe: "RPE 9", note: "MAX Intent. Snap the hips. Foundation for speed." },
@@ -99,7 +131,6 @@ const App = () => {
       icon: <Flame className="w-5 h-5 text-red-500" />,
       workout: isGameTomorrow 
         ? [
-            // Game Prep (Primer)
             { name: "World's Greatest Stretch", sets: "1", reps: "Flow", rpe: "RPE 3", note: "Full mobility flow." },
             { name: "Hang Power Cleans", sets: "3", reps: "2", rpe: "RPE 6", note: "FAST. Snap under the bar. No fatigue." },
             { name: "Counter Movement Jumps", sets: "3", reps: "3", rpe: "RPE 5", note: "Max height, soft landing." },
@@ -107,7 +138,6 @@ const App = () => {
             { name: "Band Pull Aparts", sets: "2", reps: "15", rpe: "RPE 5", note: "Activate upper back." }
           ] 
         : [
-            // Development Block
             { name: "Hang Power Cleans", sets: "5", reps: "3", rpe: "RPE 8", note: "Technical Coordination. Triple extension." },
             { name: "Back Squat", sets: "4", reps: "5", rpe: "RPE 8.5", note: "Absolute Strength Foundation. Control the descent." },
             { name: "Landmine Rows", sets: "4", reps: "8", rpe: "RPE 8", note: "Back thickness & anti-rotation." },
@@ -124,7 +154,7 @@ const App = () => {
     }
   };
 
-  const sleepRitual = [
+  const sleepRitual: RitualStep[] = [
     { task: "Electronics Off", time: "21:00", icon: <Moon className="w-4 h-4" /> },
     { task: "Warm Shower", time: "21:15", icon: <Droplet className="w-4 h-4" /> },
     { task: "Static Stretching", time: "21:30", icon: <Activity className="w-4 h-4" /> },
@@ -132,7 +162,7 @@ const App = () => {
     { task: "Dark Room / Sleep", time: "22:00", icon: <Battery className="w-4 h-4" /> },
   ];
 
-  const nutritionTips = [
+  const nutritionTips: NutritionTip[] = [
     { title: "Calorie Target", desc: "CRITICAL: 3500+ kcal daily. You cannot build power in a deficit.", target: "Daily", alert: true },
     { title: "Breakfast", desc: "High Protein + Slow Carbs (Porridge + Eggs)", target: "07:30" },
     { title: "Lunch", desc: "Chicken/Pasta or Rice. Heavy carb load on Tue/Sat.", target: "13:00" },
@@ -140,9 +170,9 @@ const App = () => {
     { title: "Post-Train", desc: "Whey Protein + Simple Carbs immediately.", target: "20:00" },
   ];
 
-  // --- COMPONENTS ---
+  // --- Sub-Components ---
 
-  const StatCard = ({ label, value, sub, color, icon, action }) => (
+  const StatCard = ({ label, value, sub, color, icon, action }: { label: string, value: string, sub: string, color: string, icon?: React.ReactNode, action?: React.ReactNode }) => (
     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-slate-500 transition-all relative overflow-hidden group">
       <div className="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity">
         {icon}
@@ -180,7 +210,7 @@ const App = () => {
     </div>
   );
 
-  const WorkoutView = ({ dayData }) => (
+  const WorkoutView = ({ dayData }: { dayData: DayData }) => (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -209,7 +239,7 @@ const App = () => {
         </div>
       )}
 
-      {dayData.type === 'gym' ? (
+      {dayData.type === 'gym' && dayData.workout ? (
         <div className="space-y-3">
           {dayData.workout.map((exercise, idx) => (
             <div key={idx} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex flex-col gap-3 group hover:border-teal-500/50 transition-all">
@@ -236,10 +266,12 @@ const App = () => {
                  </div>
                  <p className="text-xs text-slate-500 italic">
                     {exercise.rpe === 'RPE 9' && "Hard. 1 rep in tank."}
+                    {exercise.rpe === 'RPE 8.5' && "Very Heavy. 1-2 reps in tank."}
                     {exercise.rpe === 'RPE 8' && "Heavy. 2 reps in tank."}
                     {exercise.rpe === 'RPE 7' && "Fast & Snappy. Perfect Tech."}
                     {exercise.rpe === 'RPE 6' && "Speed focus. No grind."}
                     {exercise.rpe === 'RPE 5' && "Warmup/Primer weight."}
+                    {exercise.rpe === 'RPE 3' && "Mobility flow."}
                  </p>
               </div>
             </div>
@@ -409,5 +441,3 @@ const App = () => {
     </div>
   );
 };
-
-export default App;
