@@ -1,443 +1,426 @@
-import React, { useState } from 'react';
-import { 
-  Dumbbell, 
-  Calendar, 
-  Moon, 
-  Utensils, 
-  Activity, 
-  CheckCircle, 
-  Battery, 
-  Zap, 
-  Shield, 
-  Trophy,
-  Flame,
-  Droplet,
-  RotateCcw
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lawrence-Freeman Project</title>
+    
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX compilation in browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-// --- Types & Interfaces ---
+    <!-- Custom Styles for Scrollbars & Animation -->
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <div id="root"></div>
 
-interface Exercise {
-  name: string;
-  sets: string;
-  reps: string;
-  rpe: string;
-  note: string;
-}
+    <script type="text/babel">
+        const { useState } = React;
 
-interface DayData {
-  type: 'rugby_gym' | 'rugby' | 'gym' | 'rest';
-  title: string;
-  focus: string;
-  details?: string; // Optional because gym days have 'workout' instead
-  icon: React.ReactNode;
-  workout?: Exercise[];
-}
+        // --- ICONS (Inline to keep file single & portable) ---
+        const Icons = {
+            Dumbbell: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7.972-7.972a4 4 0 0 1 5.656 5.656L9 15.344a4 4 0 0 1-5.656-5.656z"/><path d="m13.344 14.344 7.972-7.972a4 4 0 0 1 5.656 5.656L19 20a4 4 0 0 1-5.656-5.656z"/></svg>,
+            Calendar: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            Moon: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+            Utensils: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>,
+            Activity: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+            CheckCircle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-5-5"/></svg>,
+            Battery: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" x2="22" y1="11" y2="13"/></svg>,
+            Zap: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Shield: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+            Trophy: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 1 0 5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
+            Flame: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.377-2.137 1.083-3H8.5z"/></svg>,
+            Droplet: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.74A17.16 17.16 0 0 0 12 2 17.16 17.16 0 0 0 5 9.26C3 11.1 2 13 2 15a7 7 0 0 0 10 7Z"/></svg>,
+            RotateCcw: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        };
 
-interface Schedule {
-  [key: string]: DayData;
-}
-
-interface RitualStep {
-  task: string;
-  time: string;
-  icon: React.ReactNode;
-}
-
-interface NutritionTip {
-  title: string;
-  desc: string;
-  target: string;
-  alert?: boolean;
-}
-
-// --- Main Component ---
-
-export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'schedule' | 'recovery'>('schedule');
-  const [selectedDay, setSelectedDay] = useState<string>('Wednesday');
-  const [streak, setStreak] = useState<number>(0);
-  const [isGameTomorrow, setIsGameTomorrow] = useState<boolean>(false);
-  const [completedToday, setCompletedToday] = useState<boolean>(false);
-
-  const handleComplete = () => {
-    if (!completedToday) {
-      setStreak((s) => s + 1);
-      setCompletedToday(true);
-    }
-  };
-
-  const handleMissed = () => {
-    if (window.confirm("Reset streak? (Use this if you missed a scheduled session)")) {
-      setStreak(0);
-      setCompletedToday(false);
-    }
-  };
-
-  // --- Data Configuration ---
-
-  const schedule: Schedule = {
-    Monday: {
-      type: 'rugby_gym',
-      title: 'Quins Day',
-      focus: 'Rugby + External S&C',
-      details: 'Follow Harlequins prescribed load. Focus on recovery nutrition immediately post-session.',
-      icon: <Shield className="w-5 h-5 text-purple-400" />
-    },
-    Tuesday: {
-      type: 'rugby',
-      title: 'Horsham Rugby',
-      focus: 'Field Skills & Tactics',
-      details: 'Technical focus. Ensure high carb intake at lunch to fuel evening training.',
-      icon: <Activity className="w-5 h-5 text-green-400" />
-    },
-    Wednesday: {
-      type: 'gym',
-      title: 'Structural Integrity & Force',
-      focus: 'Absolute Strength & Ankle Stiffness',
-      icon: <Zap className="w-5 h-5 text-yellow-400" />,
-      workout: [
-        { name: "Barefoot Pogo Jumps", sets: "3", reps: "10 sec", rpe: "RPE 6", note: "Stiffness. Bouncy & elastic. Don't let heels touch." },
-        { name: "Heavy KB Swings", sets: "5", reps: "5", rpe: "RPE 9", note: "MAX Intent. Snap the hips. Foundation for speed." },
-        { name: "Trap Bar Deadlift", sets: "4", reps: "5", rpe: "RPE 8.5", note: "Primary Force Driver. Heavy but clean." },
-        { name: "Single Leg Box Squat", sets: "4", reps: "5/side", rpe: "RPE 8", note: "Unilateral strength foundation." },
-        { name: "Tibialis Raises", sets: "3", reps: "15", rpe: "RPE 9", note: "Shin splint prevention & force transfer." }
-      ]
-    },
-    Thursday: {
-      type: 'gym',
-      title: 'Upper Armor & Power',
-      focus: 'Shoulder Health & Push Power',
-      icon: <Dumbbell className="w-5 h-5 text-blue-400" />,
-      workout: [
-        { name: "Landmine Jerk (Single Arm)", sets: "4", reps: "4/side", rpe: "RPE 8", note: "Explosive concentric. Use legs to drive." },
-        { name: "Weighted Pull Ups", sets: "4", reps: "5", rpe: "RPE 9", note: "Max Strength. Full ROM. Lat armor." },
-        { name: "Landmine Rotations", sets: "3", reps: "6/side", rpe: "RPE 8", note: "Dynamic Trunk Control. Anti-rotation." },
-        { name: "Face Pulls", sets: "3", reps: "20", rpe: "RPE 7", note: "Rear delt volume for shoulder armor." },
-        { name: "Y-T-W Raises", sets: "2", reps: "10", rpe: "RPE 6", note: "Scapular control. Slow tempo." }
-      ]
-    },
-    Friday: {
-      type: 'rest',
-      title: 'Active Recovery',
-      focus: 'System Reset',
-      details: 'Mobility work, stretching, and mental reset. Prepare for heavy Saturday.',
-      icon: <Battery className="w-5 h-5 text-teal-400" />
-    },
-    Saturday: {
-      type: 'gym',
-      title: isGameTomorrow ? 'Match Primer (Neural)' : 'The Athlete Primer (Development)',
-      focus: isGameTomorrow ? 'Potentiation & CNS Activation' : 'Full Body Force & Power',
-      icon: <Flame className="w-5 h-5 text-red-500" />,
-      workout: isGameTomorrow 
-        ? [
-            { name: "World's Greatest Stretch", sets: "1", reps: "Flow", rpe: "RPE 3", note: "Full mobility flow." },
-            { name: "Hang Power Cleans", sets: "3", reps: "2", rpe: "RPE 6", note: "FAST. Snap under the bar. No fatigue." },
-            { name: "Counter Movement Jumps", sets: "3", reps: "3", rpe: "RPE 5", note: "Max height, soft landing." },
-            { name: "Med Ball Slams", sets: "3", reps: "4", rpe: "RPE 7", note: "Wake up the nervous system." },
-            { name: "Band Pull Aparts", sets: "2", reps: "15", rpe: "RPE 5", note: "Activate upper back." }
-          ] 
-        : [
-            { name: "Hang Power Cleans", sets: "5", reps: "3", rpe: "RPE 8", note: "Technical Coordination. Triple extension." },
-            { name: "Back Squat", sets: "4", reps: "5", rpe: "RPE 8.5", note: "Absolute Strength Foundation. Control the descent." },
-            { name: "Landmine Rows", sets: "4", reps: "8", rpe: "RPE 8", note: "Back thickness & anti-rotation." },
-            { name: "Single Leg RDL", sets: "3", reps: "6/side", rpe: "RPE 8", note: "Posterior Chain foundation." },
-            { name: "Copenhagen Planks", sets: "3", reps: "15 sec", rpe: "RPE 8", note: "Groin strength for cutting speed." }
-          ]
-    },
-    Sunday: {
-      type: 'rugby',
-      title: 'Match Day / Training',
-      focus: 'Performance',
-      details: 'Competition appropriate. If no game, lighter flush run + mobility.',
-      icon: <Trophy className="w-5 h-5 text-amber-500" />
-    }
-  };
-
-  const sleepRitual: RitualStep[] = [
-    { task: "Electronics Off", time: "21:00", icon: <Moon className="w-4 h-4" /> },
-    { task: "Warm Shower", time: "21:15", icon: <Droplet className="w-4 h-4" /> },
-    { task: "Static Stretching", time: "21:30", icon: <Activity className="w-4 h-4" /> },
-    { task: "4-7-8 Breathwork", time: "21:45", icon: <Zap className="w-4 h-4" /> },
-    { task: "Dark Room / Sleep", time: "22:00", icon: <Battery className="w-4 h-4" /> },
-  ];
-
-  const nutritionTips: NutritionTip[] = [
-    { title: "Calorie Target", desc: "CRITICAL: 3500+ kcal daily. You cannot build power in a deficit.", target: "Daily", alert: true },
-    { title: "Breakfast", desc: "High Protein + Slow Carbs (Porridge + Eggs)", target: "07:30" },
-    { title: "Lunch", desc: "Chicken/Pasta or Rice. Heavy carb load on Tue/Sat.", target: "13:00" },
-    { title: "Pre-Train", desc: "Banana + Honey or Maltodextrin drink.", target: "17:00" },
-    { title: "Post-Train", desc: "Whey Protein + Simple Carbs immediately.", target: "20:00" },
-  ];
-
-  // --- Sub-Components ---
-
-  const StatCard = ({ label, value, sub, color, icon, action }: { label: string, value: string, sub: string, color: string, icon?: React.ReactNode, action?: React.ReactNode }) => (
-    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-slate-500 transition-all relative overflow-hidden group">
-      <div className="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity">
-        {icon}
-      </div>
-      <div className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-1">{label}</div>
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      <div className="flex items-center justify-between">
-        <div className="text-slate-500 text-xs mt-1">{sub}</div>
-        {action}
-      </div>
-    </div>
-  );
-
-  const DaySelector = () => (
-    <div className="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
-      {Object.keys(schedule).map((day) => {
-        const isSelected = selectedDay === day;
-        return (
-          <button
-            key={day}
-            onClick={() => setSelectedDay(day)}
-            className={`flex-shrink-0 px-4 py-3 rounded-xl flex flex-col items-center min-w-[80px] transition-all duration-300 ${
-              isSelected 
-                ? 'bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/20' 
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-          >
-            <span className="text-xs font-bold uppercase mb-1">{day.slice(0, 3)}</span>
-            <div className={`p-1 rounded-full ${isSelected ? 'bg-white/20' : 'bg-slate-900'}`}>
-              {schedule[day].icon}
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  const WorkoutView = ({ dayData }: { dayData: DayData }) => (
-    <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            {dayData.title}
-          </h2>
-          <p className="text-teal-400 text-sm font-medium">{dayData.focus}</p>
-        </div>
-        <div className="p-3 bg-slate-800 rounded-full border border-slate-700">
-          {dayData.icon}
-        </div>
-      </div>
-
-      {selectedDay === 'Saturday' && (
-        <div className="mb-6 bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-indigo-300 font-bold text-sm">Playing Tomorrow?</p>
-              <p className="text-slate-400 text-xs">Adjusts volume for game readiness</p>
-            </div>
-            <button 
-              onClick={() => setIsGameTomorrow(!isGameTomorrow)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${isGameTomorrow ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400'}`}
-            >
-              {isGameTomorrow ? 'YES - PRIMER MODE' : 'NO - TRAIN HARD'}
-            </button>
-        </div>
-      )}
-
-      {dayData.type === 'gym' && dayData.workout ? (
-        <div className="space-y-3">
-          {dayData.workout.map((exercise, idx) => (
-            <div key={idx} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex flex-col gap-3 group hover:border-teal-500/50 transition-all">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-sm font-bold group-hover:text-teal-400 transition-colors shrink-0">
-                    {idx + 1}
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg leading-tight">{exercise.name}</h3>
-                    <p className="text-slate-400 text-sm mt-1">{exercise.note}</p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-teal-400 font-bold text-xl">{exercise.sets} x {exercise.reps}</div>
-                  <div className="text-slate-500 text-xs uppercase tracking-wide">Sets x Reps</div>
-                </div>
-              </div>
-              
-              {/* RPE Bar */}
-              <div className="flex items-center gap-3 pt-2 border-t border-slate-700/50">
-                 <div className="px-2 py-1 bg-slate-900 rounded text-xs font-mono text-yellow-400 border border-yellow-400/20">
-                    {exercise.rpe}
-                 </div>
-                 <p className="text-xs text-slate-500 italic">
-                    {exercise.rpe === 'RPE 9' && "Hard. 1 rep in tank."}
-                    {exercise.rpe === 'RPE 8.5' && "Very Heavy. 1-2 reps in tank."}
-                    {exercise.rpe === 'RPE 8' && "Heavy. 2 reps in tank."}
-                    {exercise.rpe === 'RPE 7' && "Fast & Snappy. Perfect Tech."}
-                    {exercise.rpe === 'RPE 6' && "Speed focus. No grind."}
-                    {exercise.rpe === 'RPE 5' && "Warmup/Primer weight."}
-                    {exercise.rpe === 'RPE 3' && "Mobility flow."}
-                 </p>
-              </div>
-            </div>
-          ))}
-          
-          <button 
-            onClick={handleComplete}
-            disabled={completedToday}
-            className={`w-full mt-6 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${
-              completedToday 
-              ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
-              : 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-lg shadow-teal-500/20'
-            }`}
-          >
-            {completedToday ? <><CheckCircle className="w-6 h-6" /> SESSION COMPLETE</> : "LOG SESSION"}
-          </button>
-
-        </div>
-      ) : (
-        <div className="bg-slate-800 p-8 rounded-xl border border-slate-700 text-center">
-          <div className="inline-block p-4 bg-slate-900 rounded-full mb-4">
-            {dayData.icon}
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">{dayData.title}</h3>
-          <p className="text-slate-400 max-w-md mx-auto">{dayData.details}</p>
-          <div className="mt-6 flex justify-center gap-2">
-            <span className="px-3 py-1 bg-slate-900 text-slate-300 rounded-full text-xs border border-slate-700">Hydrate</span>
-            <span className="px-3 py-1 bg-slate-900 text-slate-300 rounded-full text-xs border border-slate-700">Fuel (3500kcal)</span>
-            <span className="px-3 py-1 bg-slate-900 text-slate-300 rounded-full text-xs border border-slate-700">Sleep</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-teal-500/30">
-      {/* HEADER */}
-      <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-20">
-        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
-              PROJECT <span className="text-teal-500">LF</span>
-            </h1>
-            <p className="text-xs text-slate-400 font-medium">Lawrence-Freeman Protocol</p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             {/* STREAK COUNTER */}
-             <div className="flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
-                <Flame className={`w-4 h-4 ${streak > 10 ? 'text-orange-500 animate-pulse' : 'text-slate-500'}`} />
-                <span className="text-sm font-bold text-white">{streak}</span>
-             </div>
-
-             <div className="flex gap-2">
-               <button 
-                 onClick={() => setActiveTab('schedule')}
-                 className={`p-2 rounded-lg transition-colors ${activeTab === 'schedule' ? 'bg-teal-600 text-white' : 'bg-slate-800 text-slate-400'}`}
-               >
-                 <Calendar className="w-5 h-5" />
-               </button>
-               <button 
-                 onClick={() => setActiveTab('recovery')}
-                 className={`p-2 rounded-lg transition-colors ${activeTab === 'recovery' ? 'bg-teal-600 text-white' : 'bg-slate-800 text-slate-400'}`}
-               >
-                 <Moon className="w-5 h-5" />
-               </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-md mx-auto px-4 py-6 pb-24">
+        // --- SUB-COMPONENTS ---
         
-        {/* PROFILE SUMMARY */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <StatCard label="Phase Goal" value="Force" sub="Foundation Block" color="text-white" icon={<Zap className="w-10 h-10" />} />
-          <StatCard 
-            label="Adherence" 
-            value={`${streak} Days`} 
-            sub="Current Streak" 
-            color="text-teal-400" 
-            icon={<CheckCircle className="w-10 h-10" />}
-            action={
-              <button onClick={handleMissed} className="ml-auto text-xs text-red-400 hover:text-red-300 underline decoration-red-400/30 flex items-center gap-1">
-                 <RotateCcw className="w-3 h-3" /> Missed?
-              </button>
-            }
-          />
-        </div>
-
-        {activeTab === 'schedule' && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-slate-400 text-sm font-bold uppercase tracking-widest">Weekly Schedule</h2>
-              <span className="text-xs px-2 py-1 bg-teal-900/30 text-teal-400 rounded border border-teal-900/50">June Prep</span>
+        const StatCard = ({ label, value, sub, color, icon, action }) => (
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-slate-500 transition-all relative overflow-hidden group">
+                <div className="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                    {icon}
+                </div>
+                <div className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-1">{label}</div>
+                <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                <div className="flex items-center justify-between">
+                    <div className="text-slate-500 text-xs mt-1">{sub}</div>
+                    {action}
+                </div>
             </div>
-            
-            <DaySelector />
-            
-            <WorkoutView dayData={schedule[selectedDay]} />
-          </>
-        )}
+        );
 
-        {activeTab === 'recovery' && (
-          <div className="space-y-8 animate-fade-in">
-            {/* SLEEP RITUAL */}
-            <div className="bg-gradient-to-br from-indigo-900/20 to-slate-900 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-              
-              <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                <Moon className="w-5 h-5 text-indigo-400" />
-                Sleep Protocol
-              </h2>
-              <p className="text-indigo-200/60 text-sm mb-6">Must wake up at 07:00. Consistency is the primary anabolic driver.</p>
+        // --- MAIN APP ---
 
-              <div className="space-y-4">
-                {sleepRitual.map((step, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-12 text-right text-sm font-mono text-indigo-400 font-bold">{step.time}</div>
-                    <div className="h-8 w-px bg-indigo-500/20"></div>
-                    <div className="flex-1 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-center gap-3">
-                      <div className="text-slate-400">{step.icon}</div>
-                      <span className="text-slate-200 text-sm font-medium">{step.task}</span>
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('schedule');
+            const [selectedDay, setSelectedDay] = useState('Wednesday');
+            const [streak, setStreak] = useState(0);
+            const [isGameTomorrow, setIsGameTomorrow] = useState(false);
+            const [completedToday, setCompletedToday] = useState(false);
+
+            const handleComplete = () => {
+                if (!completedToday) {
+                    setStreak(s => s + 1);
+                    setCompletedToday(true);
+                }
+            };
+
+            const handleMissed = () => {
+                if (window.confirm("Reset streak? (Use this if you missed a scheduled session)")) {
+                    setStreak(0);
+                    setCompletedToday(false);
+                }
+            };
+
+            const schedule = {
+                Monday: {
+                    type: 'rugby_gym',
+                    title: 'Quins Day',
+                    focus: 'Rugby + External S&C',
+                    details: 'Follow Harlequins prescribed load. Focus on recovery nutrition immediately post-session.',
+                    icon: <Icons.Shield className="w-5 h-5 text-purple-400" />
+                },
+                Tuesday: {
+                    type: 'rugby',
+                    title: 'Horsham Rugby',
+                    focus: 'Field Skills & Tactics',
+                    details: 'Technical focus. Ensure high carb intake at lunch to fuel evening training.',
+                    icon: <Icons.Activity className="w-5 h-5 text-green-400" />
+                },
+                Wednesday: {
+                    type: 'gym',
+                    title: 'Structural Integrity & Force',
+                    focus: 'Absolute Strength & Ankle Stiffness',
+                    icon: <Icons.Zap className="w-5 h-5 text-yellow-400" />,
+                    workout: [
+                        { name: "Barefoot Pogo Jumps", sets: "3", reps: "10 sec", rpe: "RPE 6", note: "Stiffness. Bouncy & elastic. Don't let heels touch." },
+                        { name: "Heavy KB Swings", sets: "5", reps: "5", rpe: "RPE 9", note: "MAX Intent. Snap the hips. Foundation for speed." },
+                        { name: "Trap Bar Deadlift", sets: "4", reps: "5", rpe: "RPE 8.5", note: "Primary Force Driver. Heavy but clean." },
+                        { name: "Single Leg Box Squat", sets: "4", reps: "5/side", rpe: "RPE 8", note: "Unilateral strength foundation." },
+                        { name: "Tibialis Raises", sets: "3", reps: "15", rpe: "RPE 9", note: "Shin splint prevention & force transfer." }
+                    ]
+                },
+                Thursday: {
+                    type: 'gym',
+                    title: 'Upper Armor & Power',
+                    focus: 'Shoulder Health & Push Power',
+                    icon: <Icons.Dumbbell className="w-5 h-5 text-blue-400" />,
+                    workout: [
+                        { name: "Landmine Jerk (Single Arm)", sets: "4", reps: "4/side", rpe: "RPE 8", note: "Explosive concentric. Use legs to drive." },
+                        { name: "Weighted Pull Ups", sets: "4", reps: "5", rpe: "RPE 9", note: "Max Strength. Full ROM. Lat armor." },
+                        { name: "Landmine Rotations", sets: "3", reps: "6/side", rpe: "RPE 8", note: "Dynamic Trunk Control. Anti-rotation." },
+                        { name: "Face Pulls", sets: "3", reps: "20", rpe: "RPE 7", note: "Rear delt volume for shoulder armor." },
+                        { name: "Y-T-W Raises", sets: "2", reps: "10", rpe: "RPE 6", note: "Scapular control. Slow tempo." }
+                    ]
+                },
+                Friday: {
+                    type: 'rest',
+                    title: 'Active Recovery',
+                    focus: 'System Reset',
+                    details: 'Mobility work, stretching, and mental reset. Prepare for heavy Saturday.',
+                    icon: <Icons.Battery className="w-5 h-5 text-teal-400" />
+                },
+                Saturday: {
+                    type: 'gym',
+                    title: isGameTomorrow ? 'Match Primer (Neural)' : 'The Athlete Primer (Development)',
+                    focus: isGameTomorrow ? 'Potentiation & CNS Activation' : 'Full Body Force & Power',
+                    icon: <Icons.Flame className="w-5 h-5 text-red-500" />,
+                    workout: isGameTomorrow 
+                        ? [
+                            { name: "World's Greatest Stretch", sets: "1", reps: "Flow", rpe: "RPE 3", note: "Full mobility flow." },
+                            { name: "Hang Power Cleans", sets: "3", reps: "2", rpe: "RPE 6", note: "FAST. Snap under the bar. No fatigue." },
+                            { name: "Counter Movement Jumps", sets: "3", reps: "3", rpe: "RPE 5", note: "Max height, soft landing." },
+                            { name: "Med Ball Slams", sets: "3", reps: "4", rpe: "RPE 7", note: "Wake up the nervous system." },
+                            { name: "Band Pull Aparts", sets: "2", reps: "15", rpe: "RPE 5", note: "Activate upper back." }
+                        ] 
+                        : [
+                            { name: "Hang Power Cleans", sets: "5", reps: "3", rpe: "RPE 8", note: "Technical Coordination. Triple extension." },
+                            { name: "Back Squat", sets: "4", reps: "5", rpe: "RPE 8.5", note: "Absolute Strength Foundation. Control the descent." },
+                            { name: "Landmine Rows", sets: "4", reps: "8", rpe: "RPE 8", note: "Back thickness & anti-rotation." },
+                            { name: "Single Leg RDL", sets: "3", reps: "6/side", rpe: "RPE 8", note: "Posterior Chain foundation." },
+                            { name: "Copenhagen Planks", sets: "3", reps: "15 sec", rpe: "RPE 8", note: "Groin strength for cutting speed." }
+                        ]
+                },
+                Sunday: {
+                    type: 'rugby',
+                    title: 'Match Day / Training',
+                    focus: 'Performance',
+                    details: 'Competition appropriate. If no game, lighter flush run + mobility.',
+                    icon: <Icons.Trophy className="w-5 h-5 text-amber-500" />
+                }
+            };
+
+            const sleepRitual = [
+                { task: "Electronics Off", time: "21:00", icon: <Icons.Moon className="w-4 h-4" /> },
+                { task: "Warm Shower", time: "21:15", icon: <Icons.Droplet className="w-4 h-4" /> },
+                { task: "Static Stretching", time: "21:30", icon: <Icons.Activity className="w-4 h-4" /> },
+                { task: "4-7-8 Breathwork", time: "21:45", icon: <Icons.Zap className="w-4 h-4" /> },
+                { task: "Dark Room / Sleep", time: "22:00", icon: <Icons.Battery className="w-4 h-4" /> },
+            ];
+
+            const nutritionTips = [
+                { title: "Calorie Target", desc: "CRITICAL: 3500+ kcal daily. You cannot build power in a deficit.", target: "Daily", alert: true },
+                { title: "Breakfast", desc: "High Protein + Slow Carbs (Porridge + Eggs)", target: "07:30" },
+                { title: "Lunch", desc: "Chicken/Pasta or Rice. Heavy carb load on Tue/Sat.", target: "13:00" },
+                { title: "Pre-Train", desc: "Banana + Honey or Maltodextrin drink.", target: "17:00" },
+                { title: "Post-Train", desc: "Whey Protein + Simple Carbs immediately.", target: "20:00" },
+            ];
+
+            const DaySelector = () => (
+                <div className="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
+                    {Object.keys(schedule).map((day) => {
+                        const isSelected = selectedDay === day;
+                        return (
+                            <button
+                                key={day}
+                                onClick={() => setSelectedDay(day)}
+                                className={`flex-shrink-0 px-4 py-3 rounded-xl flex flex-col items-center min-w-[80px] transition-all duration-300 ${
+                                    isSelected 
+                                        ? 'bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/20' 
+                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                }`}
+                            >
+                                <span className="text-xs font-bold uppercase mb-1">{day.slice(0, 3)}</span>
+                                <div className={`p-1 rounded-full ${isSelected ? 'bg-white/20' : 'bg-slate-900'}`}>
+                                    {schedule[day].icon}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            );
+
+            const WorkoutView = ({ dayData }) => (
+                <div className="animate-fade-in">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                {dayData.title}
+                            </h2>
+                            <p className="text-teal-400 text-sm font-medium">{dayData.focus}</p>
+                        </div>
+                        <div className="p-3 bg-slate-800 rounded-full border border-slate-700">
+                            {dayData.icon}
+                        </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* NUTRITION */}
-            <div>
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-emerald-400" />
-                Fueling Strategy
-              </h2>
-              <div className="grid grid-cols-1 gap-3">
-                {nutritionTips.map((tip, i) => (
-                  <div key={i} className={`bg-slate-800 p-4 rounded-xl border flex flex-col ${tip.alert ? 'border-red-500/50 bg-red-900/10' : 'border-slate-700'}`}>
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className={`font-bold ${tip.alert ? 'text-red-400' : 'text-white'}`}>{tip.title}</h3>
-                      <span className="text-xs font-mono text-emerald-400 bg-emerald-900/20 px-2 py-0.5 rounded">{tip.target}</span>
+                    {selectedDay === 'Saturday' && (
+                        <div className="mb-6 bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl flex items-center justify-between">
+                            <div>
+                                <p className="text-indigo-300 font-bold text-sm">Playing Tomorrow?</p>
+                                <p className="text-slate-400 text-xs">Adjusts volume for game readiness</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsGameTomorrow(!isGameTomorrow)}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${isGameTomorrow ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400'}`}
+                            >
+                                {isGameTomorrow ? 'YES - PRIMER MODE' : 'NO - TRAIN HARD'}
+                            </button>
+                        </div>
+                    )}
+
+                    {dayData.type === 'gym' && dayData.workout ? (
+                        <div className="space-y-3">
+                            {dayData.workout.map((exercise, idx) => (
+                                <div key={idx} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex flex-col gap-3 group hover:border-teal-500/50 transition-all">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-start gap-4">
+                                            <div className="bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-sm font-bold group-hover:text-teal-400 transition-colors shrink-0">
+                                                {idx + 1}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white font-bold text-lg leading-tight">{exercise.name}</h3>
+                                                <p className="text-slate-400 text-sm mt-1">{exercise.note}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <div className="text-teal-400 font-bold text-xl">{exercise.sets} x {exercise.reps}</div>
+                                            <div className="text-slate-500 text-xs uppercase tracking-wide">Sets x Reps</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3 pt-2 border-t border-slate-700/50">
+                                        <div className="px-2 py-1 bg-slate-900 rounded text-xs font-mono text-yellow-400 border border-yellow-400/20">
+                                            {exercise.rpe}
+                                        </div>
+                                        <p className="text-xs text-slate-500 italic">
+                                            {exercise.rpe === 'RPE 9' && "Hard. 1 rep in tank."}
+                                            {exercise.rpe === 'RPE 8.5' && "Very Heavy. 1-2 reps in tank."}
+                                            {exercise.rpe === 'RPE 8' && "Heavy. 2 reps in tank."}
+                                            {exercise.rpe === 'RPE 7' && "Fast & Snappy. Perfect Tech."}
+                                            {exercise.rpe === 'RPE 6' && "Speed focus. No grind."}
+                                            {exercise.rpe === 'RPE 5' && "Warmup/Primer weight."}
+                                            {exercise.rpe === 'RPE 3' && "Mobility flow."}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            <button 
+                                onClick={handleComplete}
+                                disabled={completedToday}
+                                className={`w-full mt-6 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${
+                                    completedToday 
+                                    ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
+                                    : 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-lg shadow-teal-500/20'
+                                }`}
+                            >
+                                {completedToday ? <><Icons.CheckCircle className="w-6 h-6" /> SESSION COMPLETE</> : "LOG SESSION"}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="bg-slate-800 p-8 rounded-xl border border-slate-700 text-center">
+                            <div className="inline-block p-4 bg-slate-900 rounded-full mb-4">
+                                {dayData.icon}
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">{dayData.title}</h3>
+                            <p className="text-slate-400 max-w-md mx-auto">{dayData.details}</p>
+                            <div className="mt-6 flex justify-center gap-2">
+                                <span className="px-3 py-1 bg-slate-900 text-slate-300 rounded-full text-xs border border-slate-700">Hydrate</span>
+                                <span className="px-3 py-1 bg-slate-900 text-slate-300 rounded-full text-xs border border-slate-700">Fuel (3500kcal)</span>
+                                <span className="px-3 py-1 bg-slate-900 text-slate-300 rounded-full text-xs border border-slate-700">Sleep</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-teal-500/30">
+                    {/* HEADER */}
+                    <div className="bg-slate-900 border-b border-slate-800 sticky top-0 z-20">
+                        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+                            <div>
+                                <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                                    PROJECT <span className="text-teal-500">LF</span>
+                                </h1>
+                                <p className="text-xs text-slate-400 font-medium">Lawrence-Freeman Protocol</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+                                    <Icons.Flame className={`w-4 h-4 ${streak > 10 ? 'text-orange-500 animate-pulse' : 'text-slate-500'}`} />
+                                    <span className="text-sm font-bold text-white">{streak}</span>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setActiveTab('schedule')}
+                                        className={`p-2 rounded-lg transition-colors ${activeTab === 'schedule' ? 'bg-teal-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                                    >
+                                        <Icons.Calendar className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('recovery')}
+                                        className={`p-2 rounded-lg transition-colors ${activeTab === 'recovery' ? 'bg-teal-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                                    >
+                                        <Icons.Moon className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-slate-400 text-sm">{tip.desc}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 p-4 rounded-xl border border-dashed border-slate-700 bg-slate-800/30 text-center">
-                <p className="text-slate-400 text-sm">
-                  <strong className="text-white">Hydration Goal:</strong> Clear urine by 12:00. <br/> Minimum 3L water + Electrolytes.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Floating Action / Week Summary */}
-      <div className="fixed bottom-6 left-0 right-0 flex justify-center z-30 pointer-events-none">
-        <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700 p-1 px-2 rounded-full shadow-2xl flex items-center gap-4 pointer-events-auto">
-           <div className="flex items-center gap-2 px-3 py-2">
-              <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-              <span className="text-xs font-bold text-slate-300">NEXT: {schedule[selectedDay].title}</span>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+                    <div className="max-w-md mx-auto px-4 py-6 pb-24">
+                        <div className="grid grid-cols-2 gap-3 mb-8">
+                            <StatCard label="Phase Goal" value="Force" sub="Foundation Block" color="text-white" icon={<Icons.Zap className="w-10 h-10" />} />
+                            <StatCard 
+                                label="Adherence" 
+                                value={`${streak} Days`} 
+                                sub="Current Streak" 
+                                color="text-teal-400" 
+                                icon={<Icons.CheckCircle className="w-10 h-10" />}
+                                action={
+                                    <button onClick={handleMissed} className="ml-auto text-xs text-red-400 hover:text-red-300 underline decoration-red-400/30 flex items-center gap-1">
+                                        <Icons.RotateCcw className="w-3 h-3" /> Missed?
+                                    </button>
+                                }
+                            />
+                        </div>
+
+                        {activeTab === 'schedule' && (
+                            <>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-slate-400 text-sm font-bold uppercase tracking-widest">Weekly Schedule</h2>
+                                    <span className="text-xs px-2 py-1 bg-teal-900/30 text-teal-400 rounded border border-teal-900/50">June Prep</span>
+                                </div>
+                                <DaySelector />
+                                <WorkoutView dayData={schedule[selectedDay]} />
+                            </>
+                        )}
+
+                        {activeTab === 'recovery' && (
+                            <div className="space-y-8 animate-fade-in">
+                                <div className="bg-gradient-to-br from-indigo-900/20 to-slate-900 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                                    
+                                    <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                                        <Icons.Moon className="w-5 h-5 text-indigo-400" />
+                                        Sleep Protocol
+                                    </h2>
+                                    <p className="text-indigo-200/60 text-sm mb-6">Must wake up at 07:00. Consistency is the primary anabolic driver.</p>
+
+                                    <div className="space-y-4">
+                                        {sleepRitual.map((step, i) => (
+                                            <div key={i} className="flex items-center gap-4">
+                                                <div className="w-12 text-right text-sm font-mono text-indigo-400 font-bold">{step.time}</div>
+                                                <div className="h-8 w-px bg-indigo-500/20"></div>
+                                                <div className="flex-1 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-center gap-3">
+                                                    <div className="text-slate-400">{step.icon}</div>
+                                                    <span className="text-slate-200 text-sm font-medium">{step.task}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                        <Icons.Utensils className="w-5 h-5 text-emerald-400" />
+                                        Fueling Strategy
+                                    </h2>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {nutritionTips.map((tip, i) => (
+                                            <div key={i} className={`bg-slate-800 p-4 rounded-xl border flex flex-col ${tip.alert ? 'border-red-500/50 bg-red-900/10' : 'border-slate-700'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h3 className={`font-bold ${tip.alert ? 'text-red-400' : 'text-white'}`}>{tip.title}</h3>
+                                                    <span className="text-xs font-mono text-emerald-400 bg-emerald-900/20 px-2 py-0.5 rounded">{tip.target}</span>
+                                                </div>
+                                                <p className="text-slate-400 text-sm">{tip.desc}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-4 p-4 rounded-xl border border-dashed border-slate-700 bg-slate-800/30 text-center">
+                                        <p className="text-slate-400 text-sm">
+                                            <strong className="text-white">Hydration Goal:</strong> Clear urine by 12:00. <br/> Minimum 3L water + Electrolytes.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
